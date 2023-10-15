@@ -10,11 +10,14 @@ namespace ProductsAPI.Controllers
     [Route("api/[controller]")]
     public class UsersController:ControllerBase
     {
-        private UserManager<AppUser> _userManager;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
 
-        public UsersController(UserManager<AppUser> userManager)
+        public UsersController(UserManager<AppUser> userManager,SignInManager<AppUser> signInManager)
         {
             _userManager = userManager;
+            _signInManager=signInManager;
+
         }
 
         [HttpPost("register")]
@@ -40,11 +43,23 @@ namespace ProductsAPI.Controllers
                 return StatusCode(201);//oluşturuldu.
             }
             return BadRequest(result.Errors);
-         
-
-
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Login(LoginDTO model)
+        {
+            var user=await _userManager.FindByEmailAsync(model.Email);
+            if(user is null)
+            {
+                return BadRequest(new {messagge="email hatası"});
+            }
+            var result=await _signInManager.CheckPasswordSignInAsync(user,model.Password,false);
+            if(result.Succeeded)
+            {
+                return Ok(new {token="token"});
+            }
+            return Unauthorized();//yetkisizlik
+        }
 
 
 
